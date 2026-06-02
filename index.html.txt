@@ -1,0 +1,686 @@
+以下是您要求的“摇金币华文游戏”的完整HTML代码。它实现了一个卡通风格的2D答题游戏，包含金币收集、商店系统、多人对战和排行榜等核心功能。
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>摇金币华文游戏 - 卡通大冒险</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1a6d2f 0%, #0e4a1f 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Comic Neue', 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', 'Poppins', cursive, sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 全屏游戏容器 */
+        .game-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, #ffdd88, #e5a030);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: inset 0 0 80px rgba(0,0,0,0.2);
+        }
+
+        /* 游戏主面板 2D上帝视角风格 */
+        .game-panel {
+            width: 1300px;
+            max-width: 95vw;
+            height: 90vh;
+            max-height: 800px;
+            background: #fef5e0;
+            border-radius: 72px;
+            box-shadow: 0 30px 35px rgba(0,0,0,0.3), inset 0 2px 5px rgba(255,255,200,0.8);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(2px);
+            border: 6px solid #ffcf4a;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        /* 顶部状态栏 */
+        .status-bar {
+            background: #ffbc6e;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 5px solid #ff9f3d;
+            gap: 12px;
+        }
+
+        .coin-box, .score-box, .mode-box {
+            background: #2c1a12;
+            padding: 8px 18px;
+            border-radius: 60px;
+            color: #ffd966;
+            font-weight: bold;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: inset 0 -2px 0 #5a3e2a, 0 5px 0 #1f1109;
+        }
+
+        .coin-box span:first-child, .score-box span:first-child {
+            font-size: 1.8rem;
+        }
+
+        .mode-box {
+            background: #7b3f00;
+            cursor: pointer;
+            transition: 0.1s linear;
+        }
+        .mode-box:active { transform: scale(0.96);}
+
+        /* 卡通角色区 + 倒计时 */
+        .character-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 30px;
+            background: #ffecb3;
+            margin: 8px 20px;
+            border-radius: 100px;
+            border: 2px solid #e5a030;
+        }
+
+        .mario-emotion {
+            font-size: 4rem;
+            background: #f5ce8c;
+            border-radius: 50%;
+            padding: 10px;
+            transition: 0.2s;
+            box-shadow: 0 5px 0 #c57f1a;
+        }
+
+        .timer-section {
+            background: #4a2a1a;
+            padding: 8px 22px;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            font-size: 2rem;
+            font-family: monospace;
+        }
+        .timer-number {
+            transition: color 0.2s;
+        }
+
+        /* 题目区 */
+        .quiz-area {
+            background: #fff7e8;
+            margin: 5px 25px;
+            border-radius: 60px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: inset 0 0 0 2px #ffe3aa, 0 8px 12px rgba(0,0,0,0.1);
+        }
+        .question-text {
+            font-size: 1.9rem;
+            font-weight: bold;
+            background: #ffefcf;
+            padding: 20px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: repeat(2,1fr);
+            gap: 18px;
+        }
+        .option-btn {
+            background: #ffd966;
+            border: none;
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 14px;
+            border-radius: 48px;
+            font-family: inherit;
+            transition: 0.07s linear;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #b4621a;
+            color: #2a2418;
+        }
+        .option-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #b4621a;
+        }
+
+        /* 底部按钮栏 商店/多人/对战等 */
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 15px 20px;
+            margin-top: auto;
+            background: #e7c485;
+            border-top: 5px solid #ffb347;
+        }
+        .action-btn {
+            background: #ffa559;
+            padding: 10px 28px;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 4px 0 #884d0e;
+            color: #2f1f0c;
+        }
+        .action-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #884d0e;}
+
+        /* 商店模态窗 */
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .modal.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .shop-content {
+            background: #fff1cf;
+            border-radius: 60px;
+            width: 380px;
+            max-width: 80vw;
+            padding: 25px;
+            text-align: center;
+            border: 6px solid gold;
+        }
+        .shop-item {
+            background: #ffebc2;
+            margin: 12px;
+            padding: 12px;
+            border-radius: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .buy-btn {
+            background: gold;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.05s linear;
+        }
+        .buy-btn:active { background: darkorange; transform: scale(0.95);}
+        .flash-effect {
+            animation: buttonFlash 0.2s ease-out;
+        }
+        @keyframes buttonFlash {
+            0% { box-shadow: 0 0 0 0 #fff9c4; background: #ffd966; transform: scale(1);}
+            50% { box-shadow: 0 0 0 12px rgba(255,215,0,0.8); background: #ffea80; transform: scale(1.05);}
+        }
+
+        /* 金币特效canvas */
+        #coinCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 200;
+        }
+
+        /* 排行榜侧边栏/弹窗 轻量化 */
+        .rank-panel {
+            position: fixed;
+            right: 20px;
+            top: 20%;
+            background: #2e241bd9;
+            backdrop-filter: blur(8px);
+            border-radius: 42px;
+            padding: 15px;
+            width: 220px;
+            color: white;
+            border: 3px solid #ffc857;
+            z-index: 50;
+            font-size: 0.9rem;
+        }
+        .rank-title { font-size: 1.3rem; text-align: center; margin-bottom: 8px; font-weight: bold;}
+        .rank-list { list-style: none; max-height: 160px; overflow-y: auto; }
+
+        /* 多人模式对战提示 */
+        .multi-status {
+            background: #ae6424;
+            margin: 5px 25px;
+            border-radius: 40px;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            color: #ffffb0;
+        }
+        .disabled-click { pointer-events: none; opacity: 0.6;}
+
+        @keyframes coinBurst {
+            0% { transform: scale(0.2) rotate(0deg); opacity: 1;}
+            100% { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(360deg); opacity: 0;}
+        }
+        .toast-msg {
+            position: fixed;
+            bottom: 25%;
+            left: 50%;
+            background: black;
+            color: gold;
+            padding: 10px 24px;
+            border-radius: 50px;
+            transform: translateX(-50%);
+            z-index: 300;
+            font-weight: bold;
+            animation: fadeUp 1s forwards;
+        }
+        @keyframes fadeUp {
+            0% { opacity: 0; bottom: 20%;}
+            20% { opacity: 1;}
+            100% { opacity: 0; bottom: 35%; display: none;}
+        }
+        .wrong-shake {
+            animation: shakeAnim 0.2s ease-in-out 0s 2;
+        }
+        @keyframes shakeAnim {
+            0% { transform: translateX(0);}
+            25% { transform: translateX(-6px);}
+            75% { transform: translateX(6px);}
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="game-panel" id="gamePanel">
+        <div class="status-bar">
+            <div class="coin-box"><span>🪙</span> <span id="coinAmount">0</span></div>
+            <div class="score-box"><span>🏆</span> <span id="totalScore">0</span></div>
+            <div class="mode-box" id="modeToggleBtn">👥 单人模式</div>
+        </div>
+        <div class="character-area">
+            <div class="mario-emotion" id="marioFace">😊</div>
+            <div class="timer-section">⏱️ <span id="timerNum" class="timer-number">10</span> s</div>
+        </div>
+        <div class="quiz-area">
+            <div class="question-text" id="questionText">加载题目中...</div>
+            <div class="options" id="optionsContainer"></div>
+        </div>
+        <div class="multi-status" id="multiStatusMsg">⭐ 单人模式·挑战自己 ⭐</div>
+        <div class="action-bar">
+            <button class="action-btn" id="shopBtn">🛒 商店</button>
+            <button class="action-btn" id="multiBattleBtn">⚔️ 多人对战(抢金币)</button>
+            <button class="action-btn" id="rankBtn">🏅 排行榜</button>
+        </div>
+    </div>
+    <canvas id="coinCanvas" width="2000" height="2000" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas>
+</div>
+
+<!-- 商店模态窗 -->
+<div id="shopModal" class="modal">
+    <div class="shop-content">
+        <h2>🐹 金币商店 🪙</h2>
+        <div class="shop-item">⏱️ +5秒道具 <button class="buy-btn" data-item="time">20 金币</button></div>
+        <div class="shop-item">💡 提示答案 (排除错误项) <button class="buy-btn" data-item="hint">30 金币</button></div>
+        <div class="shop-item">✨ 双倍得分卡 (下题) <button class="buy-btn" data-item="double">40 金币</button></div>
+        <div class="shop-item">🎭 表情皮肤 (增加欢乐) <button class="buy-btn" data-item="skin">15 金币</button></div>
+        <button class="action-btn" id="closeShopBtn" style="margin-top:15px;">关闭</button>
+    </div>
+</div>
+<script>
+    // ---------- 华文生字库 ----------
+    const questionsDB = [
+        { word: "猫", pinyin: "māo", meaning: "一种可爱动物，捉老鼠", options: ["狗", "猫", "鸟", "鱼"], correct: "猫", sentence: "我家有一只可爱的___。" },
+        { word: "快乐", pinyin: "kuài lè", meaning: "开心的情绪", options: ["悲伤", "快乐", "愤怒", "疲倦"], correct: "快乐", sentence: "生日那天我非常___。" },
+        { word: "太阳", pinyin: "tài yáng", meaning: "白天天空中的恒星", options: ["月亮", "星星", "太阳", "云朵"], correct: "太阳", sentence: "___ 从东方升起。" },
+        { word: "学习", pinyin: "xué xí", meaning: "获取知识", options: ["玩耍", "学习", "睡觉", "跑步"], correct: "学习", sentence: "我们要认真___。" },
+        { word: "朋友", pinyin: "péng yǒu", meaning: "关系好的人", options: ["敌人", "陌生人", "朋友", "老师"], correct: "朋友", sentence: "他是我的好___。" }
+    ];
+    let currentQuestionObj = null;
+    let currentCorrect = "";
+    let currentTime = 10;
+    let timerInterval = null;
+    let canAnswer = true;
+    let playerCoins = 150;   // 起始金币方便测试
+    let playerTotalScore = 0; // 累积得分(排行榜用)
+    let doubleModeActive = false; // 双倍得分下一题
+    let currentSkin = "😊";
+    let isMultiplayer = false;   // 多人模式（伪抢金币对抗）
+    let multiOpponentScore = 0;
+    let multiPlayerScore = 0;
+    let multiActive = false;      // 是否处于对战回合
+
+    // 排行榜(本地存储)
+    let leaderboard = JSON.parse(localStorage.getItem("coinLeaderboard")) || [];
+    function updateLeaderboard(name, score) {
+        leaderboard.push({ name: name || "玩家", score: score });
+        leaderboard.sort((a,b)=>b.score - a.score);
+        if(leaderboard.length > 8) leaderboard.pop();
+        localStorage.setItem("coinLeaderboard", JSON.stringify(leaderboard));
+        renderLeaderboard();
+    }
+    function renderLeaderboard() {
+        const rankListDiv = document.querySelector(".rank-list");
+        if(rankListDiv){
+            rankListDiv.innerHTML = leaderboard.map((p,idx)=>`<li>${idx+1}. ${p.name} 🪙 ${p.score}</li>`).join('');
+        }else{
+            // 如果不存在动态创建排行榜面板
+            let panel = document.querySelector(".rank-panel");
+            if(!panel){
+                panel = document.createElement('div');
+                panel.className = "rank-panel";
+                document.body.appendChild(panel);
+            }
+            panel.innerHTML = `<div class="rank-title">🏆 金币富豪榜</div><ul class="rank-list">${leaderboard.map((p,idx)=>`<li>${idx+1}. ${p.name} 🪙 ${p.score}</li>`).join('')}</ul>`;
+        }
+    }
+    function addToLeaderboardFromCurrent() { updateLeaderboard("勇者", playerTotalScore); }
+
+    // 金币特效
+    const canvas = document.getElementById('coinCanvas');
+    let ctx = canvas.getContext('2d');
+    function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resizeCanvas); resizeCanvas();
+    let coinsParticles = [];
+    function createCoinBurst(x, y) {
+        for(let i=0;i<24;i++){
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3 + Math.random() * 7;
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed - 3;
+            coinsParticles.push({ x, y, vx, vy, life: 1, size: 24+Math.random()*12, alpha:1 });
+        }
+        playSound('coin');
+    }
+    function drawCoins(){
+        if(!ctx) return;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        for(let i=0;i<coinsParticles.length;i++){
+            let p = coinsParticles[i];
+            ctx.save();
+            ctx.globalAlpha = p.life;
+            ctx.font = `${p.size}px "Segoe UI Emoji"`;
+            ctx.fillStyle = "#FFD966";
+            ctx.shadowBlur = 8;
+            ctx.fillText("🪙", p.x, p.y);
+            ctx.restore();
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.02;
+        }
+        coinsParticles = coinsParticles.filter(p=>p.life>0);
+        requestAnimationFrame(drawCoins);
+    }
+    drawCoins();
+
+    // 简易音效 (使用Web Audio)
+    function playSound(type){
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        if(type === 'coin'){
+            osc.frequency.value = 880; gain.gain.value = 0.2; osc.type = 'sine';
+            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime+0.3);
+            osc.stop(audioCtx.currentTime+0.3);
+        }else if(type === 'correct'){
+            osc.frequency.value = 523.25; gain.gain.value = 0.15;
+            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime+0.2);
+            osc.stop(audioCtx.currentTime+0.2);
+        }else if(type === 'wrong'){
+            osc.frequency.value = 220; gain.gain.value = 0.2;
+            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime+0.3);
+            osc.stop(audioCtx.currentTime+0.3);
+        }else if(type === 'buy'){
+            osc.frequency.value = 659.25; gain.gain.value = 0.1;
+            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime+0.15);
+            osc.stop(audioCtx.currentTime+0.15);
+        }
+    }
+
+    function showToast(msg, isError=false){
+        let div = document.createElement('div');
+        div.className = 'toast-msg';
+        div.innerText = msg;
+        if(isError) div.style.background = '#711010';
+        document.body.appendChild(div);
+        setTimeout(()=>div.remove(), 1000);
+    }
+
+    function updateUI(){
+        document.getElementById('coinAmount').innerText = playerCoins;
+        document.getElementById('totalScore').innerText = playerTotalScore;
+        document.getElementById('marioFace').innerText = currentSkin;
+        if(isMultiplayer){
+            document.getElementById('multiStatusMsg').innerHTML = `⚔️ 多人模式 | 你的金币:${playerCoins} 🆚 对手金币:${multiOpponentScore} ⚔️`;
+        }else{
+            document.getElementById('multiStatusMsg').innerHTML = `⭐ 单人模式·挑战华文 ⭐ 分数:${playerTotalScore}`;
+        }
+    }
+
+    function stopTimer(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
+    function startTimer(){
+        if(timerInterval) stopTimer();
+        timerInterval = setInterval(()=>{
+            if(!canAnswer) return;
+            if(currentTime <= 1){
+                stopTimer();
+                handleTimeout();
+            }else{
+                currentTime--;
+                let timerSpan = document.getElementById('timerNum');
+                timerSpan.innerText = currentTime;
+                if(currentTime <= 3) timerSpan.style.color = "red";
+                else timerSpan.style.color = "white";
+            }
+        },1000);
+    }
+    function handleTimeout(){
+        if(!canAnswer) return;
+        canAnswer = false;
+        showToast("⏰ 超时！正确答案是: "+currentCorrect);
+        playSound('wrong');
+        document.querySelector('.quiz-area').classList.add('wrong-shake');
+        setTimeout(()=>document.querySelector('.quiz-area').classList.remove('wrong-shake'),300);
+        loadNewQuestion();
+    }
+    function loadNewQuestion(){
+        stopTimer();
+        currentTime = 10;
+        document.getElementById('timerNum').innerText = "10";
+        document.getElementById('timerNum').style.color = "white";
+        canAnswer = true;
+        let randomIndex = Math.floor(Math.random() * questionsDB.length);
+        currentQuestionObj = {...questionsDB[randomIndex]};
+        let q = currentQuestionObj;
+        let sentenceDisplay = q.sentence.replace("___", "______");
+        document.getElementById('questionText').innerHTML = `📖 ${q.word} (${q.pinyin})<br>✏️ ${sentenceDisplay}`;
+        currentCorrect = q.correct;
+        let opts = [...q.options];
+        for(let i=opts.length;i<4;i++) opts.push("?");
+        let optionsDiv = document.getElementById('optionsContainer');
+        optionsDiv.innerHTML = '';
+        opts.forEach(opt=>{
+            let btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = ()=> handleAnswer(opt);
+            optionsDiv.appendChild(btn);
+        });
+        startTimer();
+    }
+    function handleAnswer(selected){
+        if(!canAnswer) return;
+        canAnswer = false;
+        stopTimer();
+        let isCorrect = (selected === currentCorrect);
+        if(isCorrect){
+            let reward = 10;
+            if(doubleModeActive){ reward*=2; doubleModeActive=false; showToast("✨双倍得分生效✨",false);}
+            playerCoins += reward;
+            playerTotalScore += reward;
+            if(isMultiplayer){
+                multiPlayerScore += reward;
+                playerCoins = multiPlayerScore;
+                playerTotalScore = multiPlayerScore;
+            }
+            updateUI();
+            playSound('correct');
+            showToast(`✅ +${reward}金币！`,false);
+            // 金币爆炸特效
+            let rect = document.querySelector('.quiz-area').getBoundingClientRect();
+            createCoinBurst(rect.left+rect.width/2, rect.top+50);
+            // 表情微笑/开心
+            currentSkin = "😄🎉";
+            document.getElementById('marioFace').innerText = currentSkin;
+            setTimeout(()=>{ currentSkin = "😊"; updateUI(); }, 800);
+            // 多人模式累加对手AI随意加金币
+            if(isMultiplayer && Math.random()>0.5){
+                let aiGain = 5+Math.floor(Math.random()*8);
+                multiOpponentScore += aiGain;
+                showToast(`对手获得 ${aiGain} 金币！`,false);
+                updateUI();
+            }
+        }else{
+            playSound('wrong');
+            showToast(`❌ 错误! 答案是 ${currentCorrect}`, true);
+            document.querySelector('.quiz-area').classList.add('wrong-shake');
+            setTimeout(()=>document.querySelector('.quiz-area').classList.remove('wrong-shake'),400);
+            if(isMultiplayer){
+                // 对手加一点分惩罚
+                multiOpponentScore += 5;
+                updateUI();
+            }
+        }
+        if(isMultiplayer){
+            playerCoins = multiPlayerScore;
+            playerTotalScore = multiPlayerScore;
+        }
+        updateUI();
+        loadNewQuestion();
+    }
+
+    // 商店道具购买
+    function buyItem(item){
+        if(item === 'time' && playerCoins >=20){
+            playerCoins-=20; playSound('buy'); if(canAnswer) { currentTime +=5; document.getElementById('timerNum').innerText = currentTime; showToast("⏱️ +5秒！"); }
+            else showToast("当前无法加时");
+        }else if(item === 'hint' && playerCoins >=30){
+            playerCoins-=30; playSound('buy');
+            let btns = document.querySelectorAll('.option-btn');
+            for(let btn of btns){
+                if(btn.innerText !== currentCorrect && btns.length>2){
+                    btn.style.display = 'none';
+                    setTimeout(()=>{btns.forEach(b=>b.style.display='flex');},3000);
+                    break;
+                }
+            }
+            showToast("💡 已帮你排除一个错误选项");
+        }else if(item === 'double' && playerCoins >=40){
+            playerCoins-=40; doubleModeActive=true; playSound('buy'); showToast("✨ 下一题双倍得分!");
+        }else if(item === 'skin' && playerCoins >=15){
+            playerCoins-=15; currentSkin = "🐱🎩"; playSound('buy'); updateUI(); showToast("🎭 新皮肤: 魔法猫!");
+        }else{ showToast("金币不足!",true); return false;}
+        updateUI();
+        return true;
+    }
+
+    // 多人模式对战逻辑
+    function startMultiBattle(){
+        if(isMultiplayer){
+            showToast("已经在多人模式",false); return;
+        }
+        isMultiplayer = true;
+        multiPlayerScore = playerCoins;
+        multiOpponentScore = 50 + Math.floor(Math.random()*40);
+        playerCoins = multiPlayerScore;
+        playerTotalScore = multiPlayerScore;
+        updateUI();
+        showToast("⚔️ 多人抢金币模式开启! 答对越多,压制对手!",false);
+        loadNewQuestion();
+    }
+
+    // 抢金币按钮额外效果 (多人对抗)
+    document.getElementById('multiBattleBtn').onclick = ()=>{
+        if(!isMultiplayer) startMultiBattle();
+        else showToast("已在多人对战,继续答题争夺!",false);
+    };
+    document.getElementById('modeToggleBtn').onclick = ()=>{
+        if(isMultiplayer){
+            isMultiplayer=false;
+            showToast("切换回单人模式",false);
+            playerCoins = playerTotalScore;
+            updateUI();
+            loadNewQuestion();
+        }else{
+            startMultiBattle();
+        }
+    };
+
+    // 商店交互
+    const modal = document.getElementById('shopModal');
+    document.getElementById('shopBtn').onclick = ()=>{
+        modal.classList.add('active');
+        playSound('buy');
+    };
+    document.getElementById('closeShopBtn').onclick = ()=>modal.classList.remove('active');
+    document.querySelectorAll('.buy-btn').forEach(btn=>{
+        btn.onclick = (e)=>{
+            e.stopPropagation();
+            let item = btn.getAttribute('data-item');
+            buyItem(item);
+            btn.classList.add('flash-effect');
+            setTimeout(()=>btn.classList.remove('flash-effect'),200);
+            modal.classList.remove('active');
+        };
+    });
+    document.getElementById('rankBtn').onclick = ()=>{
+        addToLeaderboardFromCurrent();
+        renderLeaderboard();
+        showToast("🏅 排行榜已更新",false);
+    };
+    // 初始化
+    function initGame(){
+        updateUI();
+        renderLeaderboard();
+        loadNewQuestion();
+    }
+    initGame();
+</script>
+</body>
+</html>
+```
